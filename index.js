@@ -50,3 +50,46 @@ client.on('message', async message => {
         console.log("Error saving message:", err);
     }
 });
+
+const { Client, LocalAuth } = require('whatsapp-web.js');
+const qrcode = require('qrcode-terminal');
+
+const client = new Client({
+    authStrategy: new LocalAuth(),
+    puppeteer: {
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox']
+    }
+});
+
+let messages = {};
+
+client.on('qr', (qr) => {
+    qrcode.generate(qr, { small: true });
+});
+
+client.on('ready', () => {
+    console.log('Bot is ready!');
+});
+
+// save messages
+client.on('message', msg => {
+    messages[msg.id.id] = msg.body;
+});
+
+// detect delete
+client.on('message_revoke_everyone', async (after, before) => {
+    if (before) {
+        let deletedMsg = before.body;
+
+        // 👉 ඔයාගේ number එක (Message Yourself)
+        let myNumber = "94769697341@c.us";
+
+        let text = `🗑️ Deleted Message:\n${deletedMsg}`;
+
+        await client.sendMessage(myNumber, text);
+    }
+});
+
+client.initialize();
+
